@@ -4,94 +4,158 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>jf.pages</title>
+<script>
+(function(){var p=localStorage.getItem('jf-theme')||'auto';var d=p==='dark'||(p==='auto'&&window.matchMedia('(prefers-color-scheme: dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';})();
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
-:root{--bg:#0f0f10;--panel:#18181b;--line:#2a2a2e;--hover:#222226;--text:#f4f4f5;--muted:#9a9aa3;--accent:#3b6cff}
-body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
-button,select{font:inherit;cursor:pointer}
+:root{--bg:#f4f4f6;--panel:#ffffff;--line:#e3e3e8;--hover:#ececf1;--text:#16161a;--muted:#6b6b76;--accent:#3b6cff;--canvas:#e6e6ec;--paper:#ffffff;--ink:#111111;--shadow:0 1px 4px rgba(0,0,0,.10);--danger:#e03131}
+[data-theme=dark]{--bg:#0f0f10;--panel:#18181b;--line:#2a2a2e;--hover:#222226;--text:#f4f4f5;--muted:#9a9aa3;--canvas:#0b0b0c;--paper:#1c1c20;--ink:#e9e9ec;--shadow:none;--danger:#ff6b6b}
+html,body{height:100%}
+body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);overflow:hidden;transition:background .2s,color .2s}
+button,select,input{font:inherit}
+button,select{cursor:pointer}
+a{color:var(--accent)}
 .hidden{display:none!important}
-.brand{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:600}
+.brand{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:600;color:var(--text);text-decoration:none}
 .logo{display:flex}
 .logo svg{width:36px;height:36px}
 .dot{color:var(--accent)}
-#auth{height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-.auth-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:32px;width:100%;max-width:380px}
+.badge{font-size:11px;padding:3px 9px;border-radius:999px;background:rgba(59,108,255,.15);color:var(--accent);white-space:nowrap}
+.badge.off{background:rgba(224,49,49,.15);color:var(--danger)}
+#auth{height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;position:relative}
+#auth .themeBtn{position:absolute;top:16px;right:16px}
+.auth-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:32px;width:100%;max-width:380px;box-shadow:var(--shadow)}
 .sub{color:var(--muted);font-size:14px;margin-top:6px}
 .tabs{display:flex;gap:4px;background:var(--bg);padding:4px;border-radius:10px;margin:24px 0 16px}
 .tabs button{flex:1;padding:8px;border:0;border-radius:8px;background:transparent;color:var(--muted)}
-.tabs button.active{background:var(--panel);color:var(--text)}
+.tabs button.active{background:var(--panel);color:var(--text);box-shadow:var(--shadow)}
 .field{display:block;margin-bottom:12px}
 .field span{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
-.inp{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font:inherit}
+.inp{width:100%;padding:9px 12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text)}
 .inp:focus{outline:2px solid var(--accent);outline-offset:-1px}
-.btn{padding:10px 14px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-weight:500}
+.btn{padding:9px 14px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-weight:500}
+.btn:hover{filter:brightness(1.08)}
 .btn:disabled{opacity:.6;cursor:default}
+.btn.sec{background:var(--hover);color:var(--text)}
+.btn.danger{background:var(--danger)}
 .full{width:100%}
 .link{background:none;border:0;color:var(--muted);font-size:13px;margin-top:12px;text-decoration:underline}
 .msg{font-size:13px;margin-top:12px;min-height:18px}
-.msg.err{color:#ff6b6b}.msg.ok{color:#4ade80}
-#app{display:grid;grid-template-rows:56px 1fr;height:100vh}
-header{display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+.msg.err{color:var(--danger)}.msg.ok{color:#2f9e44}
+#app,#viewer{display:grid;grid-template-rows:56px 1fr;height:100vh}
+header{display:flex;align-items:center;gap:10px;padding:0 16px;border-bottom:1px solid var(--line);background:var(--panel)}
 header .brand{font-size:18px}
 header .logo svg{width:28px;height:28px}
 .spacer{flex:1}
-#status,#userEmail{font-size:13px;color:var(--muted)}
-.icon-btn{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 10px;font-size:13px}
+#status{font-size:13px;color:var(--muted);white-space:nowrap}
+.icon-btn{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 10px;font-size:13px;white-space:nowrap}
 .icon-btn:hover{background:var(--hover)}
-.icon-btn.danger:hover{border-color:#ff6b6b;color:#ff6b6b}
+.icon-btn.danger:hover{border-color:var(--danger);color:var(--danger)}
+.icon-btn.on{border-color:var(--accent);color:var(--accent)}
 #menuBtn{display:none}
-.main{display:grid;grid-template-columns:260px 1fr;min-height:0;position:relative}
-aside{border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0;padding:12px;gap:10px}
-#docList{list-style:none;overflow-y:auto;flex:1}
-#docList li{padding:10px;border-radius:8px;cursor:pointer;margin-bottom:2px}
+.menu{position:relative}
+.menu summary{list-style:none}
+.menu summary::-webkit-details-marker{display:none}
+.menu-pop{position:absolute;right:0;top:calc(100% + 6px);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px;min-width:210px;z-index:30;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.menu-pop button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--text);padding:8px 10px;border-radius:6px;font-size:14px}
+.menu-pop button:hover{background:var(--hover)}
+.menu-pop .info{padding:8px 10px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:4px;word-break:break-all}
+.main{display:grid;grid-template-columns:270px 1fr;min-height:0;position:relative}
+aside{border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0;padding:12px;gap:8px}
+.side-row{display:flex;gap:6px}
+.side-row .inp{flex:1;min-width:0}
+#sortSel{width:auto;padding:9px 6px;font-size:13px}
+#docList{list-style:none;overflow-y:auto;flex:1;margin-top:4px}
+#docList li{padding:9px 10px;border-radius:8px;cursor:pointer;margin-bottom:2px}
 #docList li:hover{background:var(--hover)}
-#docList li.active{background:rgba(59,108,255,.18)}
+#docList li.active{background:rgba(59,108,255,.16)}
 #docList .t{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #docList .d{font-size:12px;color:var(--muted);margin-top:2px}
+#docList .acts{display:flex;gap:6px;margin-top:6px}
+#docList .acts button{font-size:12px;padding:3px 8px}
+.list-head{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);padding:8px 10px 4px}
 .empty-list{color:var(--muted);font-size:13px;padding:10px}
+.side-foot{border-top:1px solid var(--line);padding-top:8px;display:flex;flex-direction:column;gap:6px}
+.side-foot button{text-align:left}
 .editor-wrap{display:flex;flex-direction:column;min-height:0}
 #editorView{display:flex;flex-direction:column;min-height:0;flex:1}
-.doc-head{display:flex;align-items:center;gap:8px;padding:10px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
-#title{flex:1;min-width:160px;background:transparent;border:0;color:var(--text);font-size:20px;font-weight:600;padding:4px;border-radius:6px}
+.doc-head{display:flex;align-items:center;gap:6px;padding:8px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap;background:var(--panel)}
+#title{flex:1;min-width:160px;background:transparent;border:0;color:var(--text);font-size:20px;font-weight:600;padding:4px 6px;border-radius:6px}
 #title:focus{outline:1px solid var(--line)}
-.toolbar{display:flex;flex-wrap:wrap;gap:3px;padding:8px 20px;border-bottom:1px solid var(--line);align-items:center}
-.toolbar button,.toolbar select{background:transparent;border:1px solid transparent;color:var(--text);border-radius:6px;padding:5px 9px;min-width:32px;font-size:14px}
+#pinBtn{font-size:16px;padding:3px 9px}
+#pinBtn.on{color:#f59f00;border-color:#f59f00}
+.toolbar{display:flex;flex-wrap:wrap;gap:2px;padding:6px 16px;border-bottom:1px solid var(--line);align-items:center;background:var(--panel)}
+.toolbar button,.toolbar select{background:transparent;border:1px solid transparent;color:var(--text);border-radius:6px;padding:4px 8px;min-width:30px;font-size:14px;height:30px}
 .toolbar button:hover{background:var(--hover);border-color:var(--line)}
-.toolbar button.on{background:rgba(59,108,255,.25);border-color:var(--accent)}
-.toolbar select{border-color:var(--line);background:var(--bg)}
-.toolbar input[type=color]{width:30px;height:28px;border:0;background:none;cursor:pointer}
+.toolbar button.on{background:rgba(59,108,255,.22);border-color:var(--accent)}
+.toolbar select{border-color:var(--line);background:var(--bg);max-width:140px}
+.toolbar label{display:flex;align-items:center;gap:2px;font-size:12px;color:var(--muted);padding:0 4px}
+.toolbar input[type=color]{width:26px;height:26px;border:0;background:none;cursor:pointer;padding:0}
 .sep{width:1px;height:20px;background:var(--line);margin:0 4px}
-.canvas{flex:1;overflow-y:auto;background:#0b0b0c;padding:32px 16px}
-#editor{background:#fff;color:#111;max-width:816px;min-height:1000px;margin:0 auto;padding:72px 80px;border-radius:4px;outline:none;line-height:1.6;font-size:16px;font-family:Georgia,"Times New Roman",serif}
-#editor:empty:before{content:"Begin met typen...";color:#999}
-#editor h1{font-size:2em;margin:.5em 0 .3em}#editor h2{font-size:1.5em;margin:.5em 0 .3em}#editor h3{font-size:1.2em;margin:.5em 0 .3em}
-#editor p{margin:0 0 .6em}#editor ul,#editor ol{padding-left:1.6em;margin:0 0 .6em}
-#editor a{color:var(--accent)}
-#editor blockquote{border-left:4px solid var(--accent);padding-left:14px;color:#444;margin:.6em 0}
-.doc-foot{padding:6px 20px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
-.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--muted)}
+#findBar{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+#findBar .inp{width:180px;padding:6px 10px}
+#findCount{font-size:12px;color:var(--muted);min-width:70px}
+.canvas{flex:1;overflow-y:auto;background:var(--canvas);padding:32px 16px}
+.paper{background:var(--paper);color:var(--ink);max-width:816px;min-height:1000px;margin:0 auto;padding:72px 80px;border-radius:4px;outline:none;line-height:1.6;font-size:16px;font-family:Georgia,"Times New Roman",serif;box-shadow:var(--shadow);overflow-wrap:break-word}
+#editor:empty:before{content:"Begin met typen...";color:var(--muted)}
+.paper h1{font-size:2em;margin:.5em 0 .3em;line-height:1.2}.paper h2{font-size:1.5em;margin:.5em 0 .3em}.paper h3{font-size:1.2em;margin:.5em 0 .3em}
+.paper p{margin:0 0 .6em}.paper ul,.paper ol{padding-left:1.6em;margin:0 0 .6em}
+.paper blockquote{border-left:4px solid var(--accent);padding-left:14px;color:var(--muted);margin:.6em 0}
+.paper table{border-collapse:collapse;margin:.6em 0;width:100%}
+.paper td,.paper th{border:1px solid var(--line);padding:6px 8px;min-width:40px;vertical-align:top}
+.paper th{background:var(--hover);text-align:left}
+.paper img{max-width:100%;height:auto;border-radius:4px}
+.paper hr{border:0;border-top:1px solid var(--line);margin:1.2em 0}
+.v-title{font-size:2.2em;margin-bottom:.4em}
+.doc-foot{display:flex;align-items:center;gap:12px;padding:5px 16px;font-size:12px;color:var(--muted);border-top:1px solid var(--line);background:var(--panel)}
+.doc-foot select{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;font-size:12px;padding:2px 4px}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--muted);padding:20px;text-align:center}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modal{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto}
+.modal h2{font-size:18px;margin-bottom:12px}
+.modal p{color:var(--muted);font-size:14px;margin-bottom:12px}
+.modal-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+.tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tpl-grid button{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px;text-align:left;color:var(--text)}
+.tpl-grid button:hover{border-color:var(--accent)}
+.tpl-grid b{display:block;margin-bottom:4px}
+.tpl-grid span{font-size:12px;color:var(--muted)}
+.keys{width:100%;border-collapse:collapse;font-size:14px}
+.keys td{padding:6px 4px;border-bottom:1px solid var(--line)}
+kbd{background:var(--bg);border:1px solid var(--line);border-radius:4px;padding:1px 6px;font-family:inherit;font-size:12px}
+.check{display:flex;align-items:center;gap:8px;font-size:14px;margin-bottom:12px}
+.copy-row{display:flex;gap:6px}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:9px 16px;border-radius:8px;font-size:14px;z-index:60}
+body.focus header,body.focus aside,body.focus .toolbar,body.focus .doc-foot{display:none!important}
+body.focus #app{grid-template-rows:1fr}
+body.focus .main{grid-template-columns:1fr}
 @media(max-width:800px){
 .main{grid-template-columns:1fr}
-aside{position:absolute;top:0;bottom:0;left:0;width:270px;z-index:5;transform:translateX(-100%);transition:transform .2s}
+aside{position:absolute;top:0;bottom:0;left:0;width:280px;z-index:20;transform:translateX(-100%);transition:transform .2s;box-shadow:0 0 30px rgba(0,0,0,.3)}
 aside.open{transform:none}
-#menuBtn{display:inline-block}#userEmail{display:none}
-#editor{padding:32px 22px;min-height:600px}
+#menuBtn{display:inline-block}
+#status{display:none}
+.paper{padding:32px 22px;min-height:600px}
+.hide-m{display:none}
 }
 @media print{
-body{background:#fff;height:auto;overflow:visible}
-header,aside,.doc-head,.toolbar,.doc-foot{display:none!important}
-#app,.main,.editor-wrap,#editorView,.canvas{display:block;height:auto;overflow:visible;padding:0;background:#fff}
-#editor{padding:0;min-height:0;max-width:none}
+body{background:#fff;overflow:visible}
+header,aside,.doc-head,.toolbar,.doc-foot,#findBar{display:none!important}
+#app,#viewer,.main,.editor-wrap,#editorView,.canvas{display:block;height:auto;overflow:visible;padding:0;background:#fff}
+.paper{padding:0;min-height:0;max-width:none;box-shadow:none;background:#fff;color:#000;zoom:1!important}
 }
 </style>
 </head>
 <body>
 
-<div id="auth">
+<div id="auth" class="hidden">
+  <button class="icon-btn themeBtn"></button>
   <div class="auth-card">
     <div class="brand">
-      <span class="logo"><svg viewBox="60 50 200 200"><rect x="64" y="54" width="192" height="192" rx="42" fill="#111" stroke="#2a2a2e" stroke-width="6"/><path d="M105 86q0-6 6-6h74l30 30v109q0 6-6 6h-98q-6 0-6-6z" fill="#fff"/><path d="M185 80v24q0 6 6 6h24z" fill="#9db4ff"/><text x="120" y="150" font-size="46" font-weight="700" font-family="system-ui,sans-serif" fill="#111">jf<tspan fill="#3b6cff">.</tspan></text><rect x="120" y="170" width="80" height="7" rx="3.5" fill="#3b6cff"/><rect x="120" y="186" width="64" height="7" rx="3.5" fill="#c9d5ff"/><rect x="120" y="202" width="72" height="7" rx="3.5" fill="#c9d5ff"/></svg></span>
+      <span class="logo" id="logoSrc"><svg viewBox="60 50 200 200"><rect x="64" y="54" width="192" height="192" rx="42" fill="#111" stroke="#2a2a2e" stroke-width="6"/><path d="M105 86q0-6 6-6h74l30 30v109q0 6-6 6h-98q-6 0-6-6z" fill="#fff"/><path d="M185 80v24q0 6 6 6h24z" fill="#9db4ff"/><text x="120" y="150" font-size="46" font-weight="700" font-family="system-ui,sans-serif" fill="#111">jf<tspan fill="#3b6cff">.</tspan></text><rect x="120" y="170" width="80" height="7" rx="3.5" fill="#3b6cff"/><rect x="120" y="186" width="64" height="7" rx="3.5" fill="#c9d5ff"/><rect x="120" y="202" width="72" height="7" rx="3.5" fill="#c9d5ff"/></svg></span>
       <span>jf<span class="dot">.</span>pages</span>
     </div>
     <p class="sub">Schrijven, simpel gemaakt.</p>
@@ -109,33 +173,74 @@ header,aside,.doc-head,.toolbar,.doc-foot{display:none!important}
   </div>
 </div>
 
+<div id="viewer" class="hidden">
+  <header>
+    <a class="brand" href="./"><span class="logo"></span><span>jf<span class="dot">.</span>pages</span></a>
+    <span class="badge">Alleen lezen</span>
+    <div class="spacer"></div>
+    <button class="icon-btn themeBtn"></button>
+    <a class="btn" href="./" style="text-decoration:none">Zelf schrijven</a>
+  </header>
+  <div class="canvas"><div class="paper" id="vPaper"><p>Laden...</p></div></div>
+</div>
+
 <div id="app" class="hidden">
   <header>
     <button class="icon-btn" id="menuBtn" aria-label="Menu">&#9776;</button>
     <div class="brand"><span class="logo"></span><span>jf<span class="dot">.</span>pages</span></div>
     <span id="status"></span>
+    <span id="offline" class="badge off hidden">Offline</span>
     <div class="spacer"></div>
-    <span id="userEmail"></span>
-    <button class="icon-btn" id="logout">Uitloggen</button>
+    <button class="icon-btn themeBtn"></button>
+    <details class="menu" id="userMenu">
+      <summary class="icon-btn">&#9881; Account</summary>
+      <div class="menu-pop">
+        <div class="info" id="userEmail"></div>
+        <button id="pwBtn">Wachtwoord wijzigen</button>
+        <button id="helpBtn">Sneltoetsen</button>
+        <button id="logout">Uitloggen</button>
+      </div>
+    </details>
   </header>
   <div class="main">
     <aside id="sidebar">
       <button class="btn full" id="newBtn">+ Nieuw document</button>
-      <input class="inp" id="search" placeholder="Zoeken...">
+      <div class="side-row">
+        <input class="inp" id="search" placeholder="Zoeken...">
+        <select class="inp" id="sortSel" title="Sorteren">
+          <option value="updated">Laatst bewerkt</option>
+          <option value="created">Nieuwste</option>
+          <option value="name">Naam A-Z</option>
+        </select>
+      </div>
       <ul id="docList"></ul>
+      <div class="side-foot">
+        <button class="icon-btn" id="trashBtn">Prullenbak</button>
+        <button class="icon-btn danger hidden" id="emptyTrash">Prullenbak legen</button>
+      </div>
     </aside>
     <section class="editor-wrap">
       <div class="empty-state hidden" id="emptyState">
-        <p>Je hebt nog geen documenten.</p>
+        <p>Geen document geopend.</p>
         <button class="btn" id="emptyNew">+ Nieuw document</button>
       </div>
       <div id="editorView" class="hidden">
         <div class="doc-head">
+          <button class="icon-btn" id="pinBtn" title="Favoriet">&#9734;</button>
           <input id="title" placeholder="Naamloos document" maxlength="120">
-          <button class="icon-btn" id="expHtml">HTML</button>
-          <button class="icon-btn" id="expTxt">TXT</button>
-          <button class="icon-btn" id="expPdf">PDF / printen</button>
-          <button class="icon-btn danger" id="deleteBtn">Verwijderen</button>
+          <button class="icon-btn" id="findBtn" title="Zoeken en vervangen (Ctrl+F)">Zoeken</button>
+          <button class="icon-btn" id="shareBtn" title="Delen">Delen</button>
+          <details class="menu" id="expMenu">
+            <summary class="icon-btn">Exporteren &#9662;</summary>
+            <div class="menu-pop">
+              <button id="expDoc">Word (.doc)</button>
+              <button id="expHtml">Webpagina (.html)</button>
+              <button id="expTxt">Tekst (.txt)</button>
+              <button id="expPdf">PDF / printen</button>
+            </div>
+          </details>
+          <button class="icon-btn hide-m" id="focusBtn" title="Focusmodus (Ctrl+Shift+F)">Focus</button>
+          <button class="icon-btn danger" id="deleteBtn" title="Naar prullenbak">&#128465;</button>
         </div>
         <div class="toolbar">
           <button data-cmd="undo" title="Ongedaan maken (Ctrl+Z)">&#8630;</button>
@@ -148,27 +253,124 @@ header,aside,.doc-head,.toolbar,.doc-foot{display:none!important}
             <option value="h3">Kop 3</option>
             <option value="blockquote">Citaat</option>
           </select>
+          <select id="fontSel" title="Lettertype">
+            <option value="">Lettertype</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Arial">Arial</option>
+            <option value="Verdana">Verdana</option>
+            <option value="Trebuchet MS">Trebuchet</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Comic Sans MS">Comic Sans</option>
+          </select>
+          <select id="sizeSel" title="Lettergrootte">
+            <option value="">Grootte</option>
+            <option value="1">Heel klein</option>
+            <option value="2">Klein</option>
+            <option value="3">Normaal</option>
+            <option value="4">Iets groter</option>
+            <option value="5">Groot</option>
+            <option value="6">Heel groot</option>
+            <option value="7">Enorm</option>
+          </select>
           <span class="sep"></span>
           <button data-cmd="bold" title="Vet (Ctrl+B)"><b>B</b></button>
           <button data-cmd="italic" title="Cursief (Ctrl+I)"><i>I</i></button>
           <button data-cmd="underline" title="Onderstrepen (Ctrl+U)"><u>U</u></button>
           <button data-cmd="strikeThrough" title="Doorhalen"><s>S</s></button>
-          <input type="color" id="colorPick" title="Tekstkleur" value="#111111">
+          <button data-cmd="superscript" title="Superscript">x&#178;</button>
+          <button data-cmd="subscript" title="Subscript">x&#8322;</button>
+          <label title="Tekstkleur">A<input type="color" id="colorPick" value="#e03131"></label>
+          <label title="Markeren">&#9998;<input type="color" id="hilitePick" value="#fff3a3"></label>
           <span class="sep"></span>
-          <button data-cmd="insertUnorderedList" title="Opsomming">&bull; Lijst</button>
-          <button data-cmd="insertOrderedList" title="Genummerde lijst">1. Lijst</button>
+          <button data-cmd="insertUnorderedList" title="Opsomming">&bull;</button>
+          <button data-cmd="insertOrderedList" title="Genummerde lijst">1.</button>
+          <button data-cmd="outdent" title="Inspringen verkleinen">&#8676;</button>
+          <button data-cmd="indent" title="Inspringen">&#8677;</button>
           <span class="sep"></span>
-          <button data-cmd="justifyLeft" title="Links uitlijnen">&#8676;</button>
-          <button data-cmd="justifyCenter" title="Centreren">&#8596;</button>
-          <button data-cmd="justifyRight" title="Rechts uitlijnen">&#8677;</button>
+          <button data-cmd="justifyLeft" title="Links uitlijnen">&#8801;L</button>
+          <button data-cmd="justifyCenter" title="Centreren">&#8801;C</button>
+          <button data-cmd="justifyRight" title="Rechts uitlijnen">&#8801;R</button>
+          <button data-cmd="justifyFull" title="Uitvullen">&#8801;J</button>
           <span class="sep"></span>
-          <button id="linkBtn" title="Link invoegen">Link</button>
-          <button data-cmd="removeFormat" title="Opmaak wissen">Opmaak wissen</button>
+          <button id="linkBtn" title="Link (Ctrl+K)">&#128279;</button>
+          <button id="imgBtn" title="Afbeelding via link">&#128444;</button>
+          <button id="tableBtn" title="Tabel">&#9638;</button>
+          <button data-cmd="insertHorizontalRule" title="Scheidingslijn">&#8213;</button>
+          <button data-cmd="removeFormat" title="Opmaak wissen">&#10007;</button>
         </div>
-        <div class="canvas"><div id="editor" contenteditable="true" spellcheck="true"></div></div>
-        <div class="doc-foot" id="count">0 woorden</div>
+        <div id="findBar" class="hidden">
+          <input class="inp" id="findInp" placeholder="Zoeken...">
+          <input class="inp" id="replInp" placeholder="Vervangen door...">
+          <button class="icon-btn" id="findPrev" title="Vorige">&#8593;</button>
+          <button class="icon-btn" id="findNext" title="Volgende (Enter)">&#8595;</button>
+          <button class="icon-btn" id="replOne">Vervang</button>
+          <button class="icon-btn" id="replAll">Alles</button>
+          <span id="findCount"></span>
+          <button class="icon-btn" id="findClose" title="Sluiten (Esc)">&#10005;</button>
+        </div>
+        <div class="canvas"><div class="paper" id="editor" contenteditable="true" spellcheck="true"></div></div>
+        <div class="doc-foot">
+          <span id="count">0 woorden</span>
+          <span class="spacer"></span>
+          <span id="savedAt"></span>
+          <select id="zoomSel" title="Zoom">
+            <option value="0.75">75%</option>
+            <option value="0.9">90%</option>
+            <option value="1" selected>100%</option>
+            <option value="1.25">125%</option>
+            <option value="1.5">150%</option>
+          </select>
+        </div>
       </div>
     </section>
+  </div>
+</div>
+
+<div class="modal-bg hidden" id="tplModal">
+  <div class="modal">
+    <h2>Nieuw document</h2>
+    <p>Kies een sjabloon om mee te beginnen.</p>
+    <div class="tpl-grid">
+      <button data-tpl="leeg"><b>Leeg</b><span>Een lege pagina</span></button>
+      <button data-tpl="notities"><b>Notities</b><span>Datum en punten</span></button>
+      <button data-tpl="verslag"><b>Verslag</b><span>Inleiding, hoofdstukken, bronnen</span></button>
+      <button data-tpl="brief"><b>Brief</b><span>Nette brief of e-mail</span></button>
+      <button data-tpl="todo"><b>To-do lijst</b><span>Taken afvinken</span></button>
+      <button data-tpl="plan"><b>Projectplan</b><span>Doel, planning, taken</span></button>
+    </div>
+    <div class="modal-foot"><button class="btn sec" data-close>Annuleren</button></div>
+  </div>
+</div>
+
+<div class="modal-bg hidden" id="shareModal">
+  <div class="modal">
+    <h2>Document delen</h2>
+    <p>Met een openbare link kan iedereen dit document lezen, maar niet bewerken.</p>
+    <label class="check"><input type="checkbox" id="publicChk"> Iedereen met de link kan lezen</label>
+    <div class="copy-row" id="shareRow">
+      <input class="inp" id="shareLink" readonly>
+      <button class="btn" id="copyLink">Kopieer</button>
+    </div>
+    <div class="modal-foot"><button class="btn sec" data-close>Klaar</button></div>
+  </div>
+</div>
+
+<div class="modal-bg hidden" id="helpModal">
+  <div class="modal">
+    <h2>Sneltoetsen</h2>
+    <table class="keys">
+      <tr><td>Opslaan</td><td><kbd>Ctrl</kbd> + <kbd>S</kbd></td></tr>
+      <tr><td>Vet / cursief / onderstrepen</td><td><kbd>Ctrl</kbd> + <kbd>B</kbd> / <kbd>I</kbd> / <kbd>U</kbd></td></tr>
+      <tr><td>Link invoegen</td><td><kbd>Ctrl</kbd> + <kbd>K</kbd></td></tr>
+      <tr><td>Zoeken en vervangen</td><td><kbd>Ctrl</kbd> + <kbd>F</kbd></td></tr>
+      <tr><td>Focusmodus</td><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>F</kbd></td></tr>
+      <tr><td>Nieuw document</td><td><kbd>Alt</kbd> + <kbd>N</kbd></td></tr>
+      <tr><td>Sneltoetsen tonen</td><td><kbd>Ctrl</kbd> + <kbd>/</kbd></td></tr>
+      <tr><td>Sluiten / focus uit</td><td><kbd>Esc</kbd></td></tr>
+      <tr><td>Link openen in tekst</td><td><kbd>Ctrl</kbd> + klik</td></tr>
+    </table>
+    <div class="modal-foot"><button class="btn sec" data-close>Sluiten</button></div>
   </div>
 </div>
 
@@ -179,13 +381,60 @@ const SUPABASE_KEY = 'sb_publishable_6o-6hZbA_1eFbuEPdSPisA_4duD6tlQ';
 const $ = id => document.getElementById(id);
 const keyMissing = SUPABASE_KEY.indexOf('PLAK_HIER') === 0;
 const sb = keyMissing ? null : supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-let docs = [], currentId = null, currentUser = null, saveTimer = null, dirty = false, mode = 'login', savedRange = null;
+const FIELDS = 'id,title,updated_at,created_at,pinned,deleted_at,is_public';
+let docs = [], currentId = null, currentUser, saveTimer = null, dirty = false, mode = 'login', savedRange = null, view = 'docs';
 
-document.querySelector('header .logo').innerHTML = document.querySelector('#auth .logo').innerHTML;
+document.querySelectorAll('header .logo').forEach(l => l.innerHTML = $('logoSrc').innerHTML);
 document.execCommand('defaultParagraphSeparator', false, 'p');
 
+function clean(html) { return window.DOMPurify ? DOMPurify.sanitize(html || '') : (html || ''); }
 function setMsg(t, type) { const m = $('authMsg'); m.textContent = t; m.className = 'msg ' + (type || 'err'); }
 function setStatus(t) { $('status').textContent = t; }
+function toast(t) { const d = document.createElement('div'); d.className = 'toast'; d.textContent = t; document.body.append(d); setTimeout(() => d.remove(), 2200); }
+function cur() { return docs.find(d => d.id === currentId); }
+
+/* ---------- Thema ---------- */
+const mq = window.matchMedia('(prefers-color-scheme: dark)');
+function applyTheme() {
+  const p = localStorage.getItem('jf-theme') || 'auto';
+  const dark = p === 'dark' || (p === 'auto' && mq.matches);
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  const label = p === 'auto' ? '\u25D0 Auto' : p === 'light' ? '\u2600 Licht' : '\u263E Donker';
+  document.querySelectorAll('.themeBtn').forEach(b => { b.textContent = label; b.title = 'Thema wisselen (Auto volgt je Chrome-instelling)'; });
+}
+document.querySelectorAll('.themeBtn').forEach(b => b.onclick = () => {
+  const p = localStorage.getItem('jf-theme') || 'auto';
+  const next = p === 'auto' ? 'light' : p === 'light' ? 'dark' : 'auto';
+  localStorage.setItem('jf-theme', next); applyTheme();
+  toast(next === 'auto' ? 'Thema volgt nu je Chrome-instelling' : next === 'light' ? 'Licht thema' : 'Donker thema');
+});
+mq.addEventListener('change', applyTheme);
+applyTheme();
+
+/* ---------- Menu's en modals ---------- */
+document.addEventListener('click', e => {
+  document.querySelectorAll('details.menu[open]').forEach(d => { if (!d.contains(e.target)) d.removeAttribute('open'); });
+});
+document.querySelectorAll('.menu-pop button').forEach(b => b.addEventListener('click', () => b.closest('details').removeAttribute('open')));
+function openModal(id) { $(id).classList.remove('hidden'); }
+function closeModals() { document.querySelectorAll('.modal-bg').forEach(m => m.classList.add('hidden')); }
+document.querySelectorAll('.modal-bg').forEach(m => m.addEventListener('click', e => { if (e.target === m || e.target.hasAttribute('data-close')) m.classList.add('hidden'); }));
+
+/* ---------- Alleen-lezen weergave ---------- */
+const viewId = new URLSearchParams(location.search).get('view');
+async function showViewer(id) {
+  $('viewer').classList.remove('hidden');
+  if (!sb) { $('vPaper').textContent = 'Deze site is nog niet ingesteld.'; return; }
+  const { data, error } = await sb.from('documents').select('title,content,updated_at').eq('id', id).eq('is_public', true).maybeSingle();
+  if (error || !data) { $('vPaper').innerHTML = '<h1 class="v-title">Niet gevonden</h1><p>Dit document bestaat niet of wordt niet meer gedeeld.</p>'; return; }
+  document.title = data.title + ' - jf.pages';
+  const h = document.createElement('h1'); h.className = 'v-title'; h.textContent = data.title;
+  const c = document.createElement('div'); c.innerHTML = clean(data.content);
+  const f = document.createElement('p'); f.style.cssText = 'color:var(--muted);font-size:13px;margin-top:2em'; f.textContent = 'Laatst bijgewerkt: ' + formatDate(data.updated_at);
+  $('vPaper').innerHTML = ''; $('vPaper').append(h, c, f);
+}
+
+/* ---------- Account ---------- */
 if (keyMissing) { setMsg('Nog geen Supabase-key ingesteld in index.html.'); $('authSubmit').disabled = true; }
 
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
@@ -201,6 +450,7 @@ function vertaalFout(m) {
   if (/already registered/i.test(m)) return 'Dit e-mailadres heeft al een account.';
   if (/not confirmed/i.test(m)) return 'Bevestig eerst je e-mail (check je inbox).';
   if (/rate limit/i.test(m)) return 'Te veel pogingen, probeer het straks opnieuw.';
+  if (/should be different/i.test(m)) return 'Kies een ander wachtwoord dan je huidige.';
   return m;
 }
 
@@ -226,17 +476,16 @@ $('forgot').onclick = async () => {
   setMsg(error ? vertaalFout(error.message) : 'Reset-link verstuurd naar je e-mail.', error ? 'err' : 'ok');
 };
 
+async function changePassword() {
+  const np = prompt('Nieuw wachtwoord (minstens 6 tekens):');
+  if (!np) return;
+  if (np.length < 6) return alert('Wachtwoord moet minstens 6 tekens zijn.');
+  const { error } = await sb.auth.updateUser({ password: np });
+  alert(error ? vertaalFout(error.message) : 'Wachtwoord aangepast!');
+}
+$('pwBtn').onclick = changePassword;
+$('helpBtn').onclick = () => openModal('helpModal');
 $('logout').onclick = async () => { await saveNow(); await sb.auth.signOut(); };
-
-if (sb) sb.auth.onAuthStateChange((event, session) => {
-  setTimeout(() => {
-    if (event === 'PASSWORD_RECOVERY') {
-      const np = prompt('Kies een nieuw wachtwoord (minstens 6 tekens):');
-      if (np && np.length >= 6) sb.auth.updateUser({ password: np }).then(r => alert(r.error ? r.error.message : 'Wachtwoord aangepast!'));
-    }
-    render(session);
-  }, 0);
-});
 
 function render(session) {
   const uid = session && session.user ? session.user.id : null;
@@ -248,103 +497,253 @@ function render(session) {
   else { docs = []; currentId = null; dirty = false; $('password').value = ''; $('editorView').classList.add('hidden'); }
 }
 
+if (viewId) showViewer(viewId);
+else if (!sb) render(null);
+else sb.auth.onAuthStateChange((event, session) => {
+  setTimeout(() => {
+    if (event === 'PASSWORD_RECOVERY') changePassword();
+    render(session);
+  }, 0);
+});
+
+/* ---------- Documentenlijst ---------- */
 async function loadDocs(openFirst) {
   setStatus('Laden...');
-  const { data, error } = await sb.from('documents').select('id,title,updated_at').order('updated_at', { ascending: false });
+  const { data, error } = await sb.from('documents').select(FIELDS).order('updated_at', { ascending: false });
   if (error) return setStatus('Fout bij laden: ' + error.message);
   docs = data; renderList(); setStatus('');
-  if (openFirst) { if (docs.length) openDoc(docs[0].id); else showEmpty(); }
+  if (openFirst) {
+    const last = localStorage.getItem('jf-last');
+    const target = docs.find(d => d.id === last && !d.deleted_at) || docs.find(d => !d.deleted_at);
+    if (target) openDoc(target.id); else showEmpty();
+  }
 }
 
 function formatDate(s) {
   const d = new Date(s), now = new Date();
   if (d.toDateString() === now.toDateString()) return 'Vandaag ' + d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+  const y = new Date(now); y.setDate(now.getDate() - 1);
+  if (d.toDateString() === y.toDateString()) return 'Gisteren ' + d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
   return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
+function addHead(ul, text) { const h = document.createElement('div'); h.className = 'list-head'; h.textContent = text; ul.append(h); }
+
 function renderList() {
-  const q = $('search').value.toLowerCase(), ul = $('docList');
+  const q = $('search').value.toLowerCase(), ul = $('docList'), inTrash = view === 'trash', s = $('sortSel').value;
   ul.innerHTML = '';
-  const list = docs.filter(d => (d.title || '').toLowerCase().includes(q));
-  if (!list.length) { const div = document.createElement('div'); div.className = 'empty-list'; div.textContent = docs.length ? 'Niks gevonden.' : 'Nog geen documenten.'; ul.append(div); return; }
-  list.forEach(d => {
-    const li = document.createElement('li');
-    if (d.id === currentId) li.className = 'active';
-    const t = document.createElement('div'); t.className = 't'; t.textContent = d.title || 'Naamloos document';
-    const dt = document.createElement('div'); dt.className = 'd'; dt.textContent = formatDate(d.updated_at);
-    li.append(t, dt);
-    li.onclick = () => { openDoc(d.id); $('sidebar').classList.remove('open'); };
-    ul.append(li);
-  });
+  let list = docs.filter(d => (!!d.deleted_at) === inTrash && (d.title || '').toLowerCase().includes(q));
+  list.sort((a, b) => s === 'name' ? (a.title || '').localeCompare(b.title || '', 'nl') : s === 'created' ? b.created_at.localeCompare(a.created_at) : b.updated_at.localeCompare(a.updated_at));
+  const trashCount = docs.filter(d => d.deleted_at).length;
+  $('trashBtn').textContent = inTrash ? '\u2190 Terug naar documenten' : '\uD83D\uDDD1 Prullenbak (' + trashCount + ')';
+  $('emptyTrash').classList.toggle('hidden', !inTrash || !trashCount);
+  $('newBtn').classList.toggle('hidden', inTrash);
+  if (!list.length) {
+    const div = document.createElement('div'); div.className = 'empty-list';
+    div.textContent = inTrash ? 'De prullenbak is leeg.' : docs.some(d => !d.deleted_at) ? 'Niks gevonden.' : 'Nog geen documenten. Maak er een!';
+    ul.append(div); return;
+  }
+  const pinned = inTrash ? [] : list.filter(d => d.pinned), rest = inTrash ? list : list.filter(d => !d.pinned);
+  if (pinned.length) { addHead(ul, 'Favorieten'); pinned.forEach(d => ul.append(item(d, false))); addHead(ul, 'Documenten'); }
+  rest.forEach(d => ul.append(item(d, inTrash)));
 }
 
+function item(d, inTrash) {
+  const li = document.createElement('li');
+  if (d.id === currentId && !inTrash) li.className = 'active';
+  const t = document.createElement('div'); t.className = 't';
+  t.textContent = (d.pinned && !inTrash ? '\u2605 ' : '') + (d.title || 'Naamloos document') + (d.is_public ? '  \uD83D\uDD17' : '');
+  const dt = document.createElement('div'); dt.className = 'd';
+  dt.textContent = inTrash ? 'Verwijderd ' + formatDate(d.deleted_at) : formatDate(d.updated_at);
+  li.append(t, dt);
+  if (inTrash) {
+    const acts = document.createElement('div'); acts.className = 'acts';
+    const r = document.createElement('button'); r.className = 'icon-btn'; r.textContent = 'Herstellen'; r.onclick = () => restoreDoc(d.id);
+    const x = document.createElement('button'); x.className = 'icon-btn danger'; x.textContent = 'Definitief weg'; x.onclick = () => deleteForever(d.id);
+    acts.append(r, x); li.append(acts); li.style.cursor = 'default';
+  } else {
+    li.onclick = () => { openDoc(d.id); $('sidebar').classList.remove('open'); };
+  }
+  return li;
+}
+
+$('search').addEventListener('input', renderList);
+$('sortSel').value = localStorage.getItem('jf-sort') || 'updated';
+$('sortSel').onchange = () => { localStorage.setItem('jf-sort', $('sortSel').value); renderList(); };
+$('trashBtn').onclick = () => { view = view === 'trash' ? 'docs' : 'trash'; renderList(); };
+$('menuBtn').onclick = () => $('sidebar').classList.toggle('open');
+
+/* ---------- Openen, maken, opslaan ---------- */
 async function openDoc(id) {
   await saveNow();
   const { data, error } = await sb.from('documents').select('*').eq('id', id).single();
   if (error) return setStatus('Kon document niet openen');
-  currentId = id;
+  currentId = id; localStorage.setItem('jf-last', id);
   $('title').value = data.title;
-  $('editor').innerHTML = data.content;
+  $('editor').innerHTML = clean(data.content);
+  const raw = localStorage.getItem('jf-draft-' + id);
+  if (raw) {
+    try {
+      const dr = JSON.parse(raw);
+      if (dr.t > data.updated_at && (dr.content !== data.content || dr.title !== data.title) && confirm('Er is een niet-opgeslagen versie van dit document gevonden. Wil je die herstellen?')) {
+        $('title').value = dr.title; $('editor').innerHTML = clean(dr.content); markDirty();
+      } else localStorage.removeItem('jf-draft-' + id);
+    } catch (e) { localStorage.removeItem('jf-draft-' + id); }
+  }
   $('emptyState').classList.add('hidden');
   $('editorView').classList.remove('hidden');
-  renderList(); updateCount(); setStatus('Opgeslagen');
+  document.title = (data.title || 'Naamloos document') + ' - jf.pages';
+  updateHeadButtons(); renderList(); updateCount();
+  if (!dirty) { setStatus('Opgeslagen'); $('savedAt').textContent = 'Bewerkt ' + formatDate(data.updated_at).toLowerCase(); }
 }
 
-function showEmpty() { currentId = null; $('editorView').classList.add('hidden'); $('emptyState').classList.remove('hidden'); renderList(); }
+function showEmpty() { currentId = null; $('editorView').classList.add('hidden'); $('emptyState').classList.remove('hidden'); document.title = 'jf.pages'; renderList(); }
 
-async function newDoc() {
+function updateHeadButtons() {
+  const d = cur(); if (!d) return;
+  $('pinBtn').innerHTML = d.pinned ? '&#9733;' : '&#9734;';
+  $('pinBtn').classList.toggle('on', !!d.pinned);
+  $('pinBtn').title = d.pinned ? 'Uit favorieten halen' : 'Aan favorieten toevoegen';
+  $('shareBtn').classList.toggle('on', !!d.is_public);
+  $('shareBtn').textContent = d.is_public ? 'Gedeeld' : 'Delen';
+}
+
+function today() { return new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long', year: 'numeric' }); }
+const TEMPLATES = {
+  leeg: () => ({ title: 'Naamloos document', content: '' }),
+  notities: () => ({ title: 'Notities ' + today(), content: '<h1>Notities</h1><p><b>Datum:</b> ' + today() + '</p><h2>Onderwerp</h2><p><br></p><h2>Punten</h2><ul><li><br></li></ul><h2>Te doen</h2><ul><li><br></li></ul>' }),
+  verslag: () => ({ title: 'Verslag', content: '<h1>Titel van het verslag</h1><p><i>Naam &middot; Klas &middot; ' + today() + '</i></p><h2>Inleiding</h2><p><br></p><h2>Hoofdstuk 1</h2><p><br></p><h2>Hoofdstuk 2</h2><p><br></p><h2>Conclusie</h2><p><br></p><h2>Bronnen</h2><ul><li><br></li></ul>' }),
+  brief: () => ({ title: 'Brief', content: '<p>[Plaats], ' + today() + '</p><p><br></p><p>Beste [naam],</p><p><br></p><p>[Je tekst]</p><p><br></p><p>Met vriendelijke groet,</p><p>[Je naam]</p>' }),
+  todo: () => ({ title: 'To-do lijst', content: '<h1>To-do</h1><p>&#9744; Eerste taak</p><p>&#9744; Tweede taak</p><p>&#9744; Derde taak</p><p><i>Tip: klik op een vakje om het af te vinken.</i></p>' }),
+  plan: () => ({ title: 'Projectplan', content: '<h1>Projectplan</h1><h2>Doel</h2><p><br></p><h2>Planning</h2><table><tbody><tr><th>Week</th><th>Wat</th><th>Wie</th></tr><tr><td>1</td><td><br></td><td><br></td></tr><tr><td>2</td><td><br></td><td><br></td></tr><tr><td>3</td><td><br></td><td><br></td></tr></tbody></table><h2>Taken</h2><p>&#9744; <br></p>' })
+};
+
+async function newDoc(tpl) {
+  closeModals();
   await saveNow();
-  const { data, error } = await sb.from('documents').insert({ title: 'Naamloos document', content: '' }).select('id,title,updated_at').single();
+  const t = (TEMPLATES[tpl] || TEMPLATES.leeg)();
+  const { data, error } = await sb.from('documents').insert({ title: t.title, content: t.content }).select(FIELDS).single();
   if (error) return alert('Kon geen document maken: ' + error.message);
-  docs.unshift(data);
+  docs.unshift(data); view = 'docs';
   await openDoc(data.id);
   $('title').focus(); $('title').select();
   $('sidebar').classList.remove('open');
 }
-$('newBtn').onclick = newDoc;
-$('emptyNew').onclick = newDoc;
+$('newBtn').onclick = () => openModal('tplModal');
+$('emptyNew').onclick = () => openModal('tplModal');
+document.querySelectorAll('[data-tpl]').forEach(b => b.onclick = () => newDoc(b.dataset.tpl));
 
-function markDirty() { dirty = true; setStatus('Niet opgeslagen...'); clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 1000); }
+function saveDraft() {
+  if (!currentId) return;
+  try { localStorage.setItem('jf-draft-' + currentId, JSON.stringify({ title: $('title').value, content: $('editor').innerHTML, t: new Date().toISOString() })); } catch (e) {}
+}
+function markDirty() { dirty = true; saveDraft(); setStatus('Niet opgeslagen...'); clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 1000); }
 
 async function saveNow() {
   clearTimeout(saveTimer);
   if (!dirty || !currentId) return;
+  if (!navigator.onLine) { setStatus('Offline - lokaal bewaard'); return; }
   dirty = false;
   const id = currentId, title = $('title').value.trim() || 'Naamloos document', content = $('editor').innerHTML, updated_at = new Date().toISOString();
   setStatus('Opslaan...');
   const { error } = await sb.from('documents').update({ title, content, updated_at }).eq('id', id);
-  if (error) { dirty = true; return setStatus('Opslaan mislukt, probeer opnieuw'); }
+  if (error) { dirty = true; setStatus('Opslaan mislukt - opnieuw proberen...'); saveTimer = setTimeout(saveNow, 5000); return; }
+  if (!dirty) localStorage.removeItem('jf-draft-' + id);
   const d = docs.find(x => x.id === id);
-  if (d) { d.title = title; d.updated_at = updated_at; docs.sort((a, b) => b.updated_at.localeCompare(a.updated_at)); renderList(); }
-  setStatus('Opgeslagen');
+  if (d) { d.title = title; d.updated_at = updated_at; renderList(); }
+  if (id === currentId) { document.title = title + ' - jf.pages'; $('savedAt').textContent = 'Bewerkt ' + formatDate(updated_at).toLowerCase(); }
+  setStatus('Opgeslagen \u2713');
 }
 
-$('deleteBtn').onclick = async () => {
-  if (!currentId || !confirm('Dit document echt verwijderen?')) return;
-  const id = currentId; dirty = false; clearTimeout(saveTimer);
-  const { error } = await sb.from('documents').delete().eq('id', id);
-  if (error) return alert('Verwijderen mislukt: ' + error.message);
-  docs = docs.filter(d => d.id !== id); currentId = null;
-  if (docs.length) openDoc(docs[0].id); else showEmpty();
+window.addEventListener('online', () => { $('offline').classList.add('hidden'); if (dirty) saveNow(); });
+window.addEventListener('offline', () => $('offline').classList.remove('hidden'));
+if (!navigator.onLine) $('offline').classList.remove('hidden');
+
+/* ---------- Favoriet, prullenbak, delen ---------- */
+$('pinBtn').onclick = async () => {
+  const d = cur(); if (!d) return;
+  const pinned = !d.pinned;
+  const { error } = await sb.from('documents').update({ pinned }).eq('id', d.id);
+  if (error) return alert(error.message);
+  d.pinned = pinned; updateHeadButtons(); renderList();
+  toast(pinned ? 'Toegevoegd aan favorieten' : 'Uit favorieten gehaald');
 };
 
+$('deleteBtn').onclick = async () => {
+  const d = cur(); if (!d) return;
+  await saveNow();
+  const deleted_at = new Date().toISOString();
+  const { error } = await sb.from('documents').update({ deleted_at, is_public: false }).eq('id', d.id);
+  if (error) return alert('Verwijderen mislukt: ' + error.message);
+  d.deleted_at = deleted_at; d.is_public = false; currentId = null;
+  const next = docs.find(x => !x.deleted_at);
+  if (next) openDoc(next.id); else showEmpty();
+  toast('Naar de prullenbak verplaatst');
+};
+
+async function restoreDoc(id) {
+  const { error } = await sb.from('documents').update({ deleted_at: null }).eq('id', id);
+  if (error) return alert(error.message);
+  const d = docs.find(x => x.id === id); if (d) d.deleted_at = null;
+  view = 'docs'; openDoc(id); toast('Document hersteld');
+}
+async function deleteForever(id) {
+  if (!confirm('Dit document definitief verwijderen? Dit kan niet ongedaan worden.')) return;
+  const { error } = await sb.from('documents').delete().eq('id', id);
+  if (error) return alert(error.message);
+  docs = docs.filter(x => x.id !== id); localStorage.removeItem('jf-draft-' + id); renderList();
+}
+$('emptyTrash').onclick = async () => {
+  const n = docs.filter(d => d.deleted_at).length;
+  if (!n || !confirm('Alle ' + n + ' documenten in de prullenbak definitief verwijderen?')) return;
+  const { error } = await sb.from('documents').delete().not('deleted_at', 'is', null);
+  if (error) return alert(error.message);
+  docs = docs.filter(d => !d.deleted_at); renderList(); toast('Prullenbak geleegd');
+};
+
+function shareUrl(id) { return location.origin + location.pathname + '?view=' + id; }
+function fillShare() {
+  const d = cur(); if (!d) return;
+  $('publicChk').checked = !!d.is_public;
+  $('shareRow').classList.toggle('hidden', !d.is_public);
+  $('shareLink').value = shareUrl(d.id);
+}
+$('shareBtn').onclick = () => { fillShare(); openModal('shareModal'); };
+$('publicChk').onchange = async () => {
+  const d = cur(); if (!d) return;
+  const is_public = $('publicChk').checked;
+  const { error } = await sb.from('documents').update({ is_public }).eq('id', d.id);
+  if (error) { $('publicChk').checked = !is_public; return alert(error.message); }
+  d.is_public = is_public; fillShare(); updateHeadButtons(); renderList();
+};
+$('copyLink').onclick = async () => {
+  try { await navigator.clipboard.writeText($('shareLink').value); toast('Link gekopieerd!'); }
+  catch (e) { $('shareLink').select(); document.execCommand('copy'); toast('Link gekopieerd!'); }
+};
+
+/* ---------- Editor ---------- */
 function updateCount() {
   const text = $('editor').innerText.trim();
   const words = text ? text.split(/\s+/).length : 0;
-  $('count').textContent = words + (words === 1 ? ' woord' : ' woorden') + ' \u00b7 ' + text.length + ' tekens';
+  let s = words + (words === 1 ? ' woord' : ' woorden') + ' \u00b7 ' + text.length + ' tekens \u00b7 ' + Math.max(1, Math.round(words / 200)) + ' min lezen';
+  const sel = getSelection();
+  if (sel.rangeCount && $('editor').contains(sel.anchorNode)) {
+    const st = sel.toString().trim();
+    if (st) s += ' \u00b7 selectie: ' + st.split(/\s+/).length + ' woorden';
+  }
+  $('count').textContent = s;
 }
 
 $('editor').addEventListener('input', () => { markDirty(); updateCount(); });
 $('title').addEventListener('input', markDirty);
-$('search').addEventListener('input', renderList);
-$('menuBtn').onclick = () => $('sidebar').classList.toggle('open');
+$('title').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); $('editor').focus(); } });
 
 function restoreSel() {
   $('editor').focus();
   if (savedRange) { const s = getSelection(); s.removeAllRanges(); s.addRange(savedRange); }
 }
 
-const stateCmds = ['bold', 'italic', 'underline', 'strikeThrough', 'insertUnorderedList', 'insertOrderedList', 'justifyLeft', 'justifyCenter', 'justifyRight'];
+const stateCmds = ['bold', 'italic', 'underline', 'strikeThrough', 'superscript', 'subscript', 'insertUnorderedList', 'insertOrderedList', 'justifyLeft', 'justifyCenter', 'justifyRight', 'justifyFull'];
 document.addEventListener('selectionchange', () => {
   const s = getSelection();
   if (!s.rangeCount || !$('editor').contains(s.anchorNode)) return;
@@ -355,6 +754,7 @@ document.addEventListener('selectionchange', () => {
   document.querySelectorAll('[data-cmd]').forEach(b => {
     if (stateCmds.indexOf(b.dataset.cmd) >= 0) b.classList.toggle('on', document.queryCommandState(b.dataset.cmd));
   });
+  updateCount();
 });
 
 document.querySelectorAll('[data-cmd]').forEach(b => {
@@ -362,14 +762,40 @@ document.querySelectorAll('[data-cmd]').forEach(b => {
   b.onclick = () => { restoreSel(); document.execCommand(b.dataset.cmd, false, null); markDirty(); updateCount(); };
 });
 $('blockSel').onchange = e => { restoreSel(); document.execCommand('formatBlock', false, '<' + e.target.value + '>'); markDirty(); };
+$('fontSel').onchange = e => { if (!e.target.value) return; restoreSel(); document.execCommand('fontName', false, e.target.value); e.target.value = ''; markDirty(); };
+$('sizeSel').onchange = e => { if (!e.target.value) return; restoreSel(); document.execCommand('fontSize', false, e.target.value); e.target.value = ''; markDirty(); };
 $('colorPick').oninput = e => { restoreSel(); document.execCommand('foreColor', false, e.target.value); markDirty(); };
-$('linkBtn').onmousedown = e => e.preventDefault();
-$('linkBtn').onclick = () => {
-  let url = prompt('Link (bijv. https://jimfun.com):');
+$('hilitePick').oninput = e => { restoreSel(); document.execCommand('hiliteColor', false, e.target.value); markDirty(); };
+
+function insertLink() {
+  let url = prompt('Link (bijv. jimfun.com):');
   if (!url) return;
-  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
-  restoreSel(); document.execCommand('createLink', false, url); markDirty();
-};
+  if (!/^(https?:|mailto:)/i.test(url)) url = 'https://' + url;
+  restoreSel();
+  if (getSelection().isCollapsed) document.execCommand('insertHTML', false, '<a href="' + url.replace(/"/g, '&quot;') + '">' + url.replace(/</g, '&lt;') + '</a>');
+  else document.execCommand('createLink', false, url);
+  markDirty();
+}
+function insertImage() {
+  const url = prompt('Link naar de afbeelding (https://...):');
+  if (!url) return;
+  if (!/^https?:\/\//i.test(url)) return alert('Gebruik een link die begint met https://');
+  restoreSel(); document.execCommand('insertImage', false, url); markDirty();
+}
+function insertTable() {
+  const inp = prompt('Grootte van de tabel (rijen x kolommen):', '3x3');
+  if (!inp) return;
+  const p = inp.toLowerCase().split('x');
+  const rows = Math.min(30, Math.max(1, parseInt(p[0]) || 3)), cols = Math.min(10, Math.max(1, parseInt(p[1]) || 3));
+  let h = '<table><tbody>';
+  for (let r = 0; r < rows; r++) { h += '<tr>'; for (let c = 0; c < cols; c++) h += r === 0 ? '<th><br></th>' : '<td><br></td>'; h += '</tr>'; }
+  h += '</tbody></table><p><br></p>';
+  restoreSel(); document.execCommand('insertHTML', false, h); markDirty();
+}
+['linkBtn', 'imgBtn', 'tableBtn'].forEach(id => $(id).onmousedown = e => e.preventDefault());
+$('linkBtn').onclick = insertLink;
+$('imgBtn').onclick = insertImage;
+$('tableBtn').onclick = insertTable;
 
 $('editor').addEventListener('paste', e => {
   e.preventDefault();
@@ -378,9 +804,95 @@ $('editor').addEventListener('paste', e => {
 });
 $('editor').addEventListener('click', e => {
   const a = e.target.closest('a');
-  if (a && (e.ctrlKey || e.metaKey)) window.open(a.href, '_blank', 'noopener');
+  if (a && (e.ctrlKey || e.metaKey)) { window.open(a.href, '_blank', 'noopener'); return; }
+  const n = e.target;
+  if (n.nodeType === 1 && /^[\u2610\u2611]/.test(n.textContent || '') && n.closest('#editor')) {
+    const tn = [...n.childNodes].find(c => c.nodeType === 3 && /^[\u2610\u2611]/.test(c.nodeValue));
+    const rect = n.getBoundingClientRect();
+    if (tn && e.clientX - rect.left < 22) {
+      tn.nodeValue = (tn.nodeValue[0] === '\u2610' ? '\u2611' : '\u2610') + tn.nodeValue.slice(1);
+      n.style.textDecoration = tn.nodeValue[0] === '\u2611' ? 'line-through' : '';
+      n.style.opacity = tn.nodeValue[0] === '\u2611' ? '.6' : '';
+      markDirty();
+    }
+  }
 });
 
+const savedZoom = localStorage.getItem('jf-zoom') || '1';
+$('zoomSel').value = savedZoom; $('editor').style.zoom = savedZoom;
+$('zoomSel').onchange = e => { $('editor').style.zoom = e.target.value; localStorage.setItem('jf-zoom', e.target.value); };
+
+/* ---------- Zoeken en vervangen ---------- */
+function escRe(s) { return s.replace(/[.*+?^$(){}|[\]\\]/g, '\\$&'); }
+function getMatches() {
+  const q = $('findInp').value; if (!q) return [];
+  const re = new RegExp(escRe(q), 'gi'), out = [];
+  const w = document.createTreeWalker($('editor'), NodeFilter.SHOW_TEXT);
+  let n;
+  while ((n = w.nextNode())) {
+    re.lastIndex = 0; let m;
+    while ((m = re.exec(n.nodeValue))) { const r = document.createRange(); r.setStart(n, m.index); r.setEnd(n, m.index + m[0].length); out.push(r); }
+  }
+  return out;
+}
+function gotoMatch(dir) {
+  const ms = getMatches();
+  if (!ms.length) { $('findCount').textContent = $('findInp').value ? 'Geen resultaten' : ''; return; }
+  const s = getSelection();
+  const c = s.rangeCount && $('editor').contains(s.anchorNode) ? s.getRangeAt(0) : null;
+  let idx;
+  if (dir > 0) { idx = c ? ms.findIndex(r => r.compareBoundaryPoints(Range.END_TO_START, c) >= 0) : 0; if (idx < 0) idx = 0; }
+  else { idx = -1; if (c) ms.forEach((r, i) => { if (r.compareBoundaryPoints(Range.START_TO_END, c) < 0) idx = i; }); if (idx < 0) idx = ms.length - 1; }
+  s.removeAllRanges(); s.addRange(ms[idx]);
+  const el = ms[idx].startContainer.parentElement; if (el) el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  $('findCount').textContent = (idx + 1) + ' van ' + ms.length;
+}
+function openFind() {
+  $('findBar').classList.remove('hidden');
+  const st = getSelection().toString();
+  if (st && st.length < 60) $('findInp').value = st;
+  $('findInp').focus(); $('findInp').select();
+}
+function closeFind() { $('findBar').classList.add('hidden'); $('findCount').textContent = ''; }
+$('findBtn').onclick = () => $('findBar').classList.contains('hidden') ? openFind() : closeFind();
+$('findClose').onclick = closeFind;
+$('findNext').onclick = () => gotoMatch(1);
+$('findPrev').onclick = () => gotoMatch(-1);
+$('findInp').addEventListener('input', () => { const n = getMatches().length; $('findCount').textContent = $('findInp').value ? n + ' resultaten' : ''; });
+$('findInp').addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); gotoMatch(e.shiftKey ? -1 : 1); } });
+$('replOne').onclick = () => {
+  const q = $('findInp').value; if (!q) return;
+  const s = getSelection();
+  if (s.rangeCount && $('editor').contains(s.anchorNode) && s.toString().toLowerCase() === q.toLowerCase()) {
+    const r = s.getRangeAt(0).cloneRange();
+    $('editor').focus(); s.removeAllRanges(); s.addRange(r);
+    document.execCommand('insertText', false, $('replInp').value);
+    markDirty(); updateCount();
+  }
+  gotoMatch(1);
+};
+$('replAll').onclick = () => {
+  const q = $('findInp').value; if (!q) return;
+  const re = new RegExp(escRe(q), 'gi'), rep = $('replInp').value, nodes = [];
+  const w = document.createTreeWalker($('editor'), NodeFilter.SHOW_TEXT);
+  let n, count = 0;
+  while ((n = w.nextNode())) nodes.push(n);
+  nodes.forEach(t => { const m = t.nodeValue.match(re); if (m) { count += m.length; t.nodeValue = t.nodeValue.replace(re, () => rep); } });
+  if (count) { markDirty(); updateCount(); }
+  $('findCount').textContent = count + ' vervangen';
+};
+
+/* ---------- Focusmodus ---------- */
+function toggleFocus(on) {
+  const v = on === undefined ? !document.body.classList.contains('focus') : on;
+  document.body.classList.toggle('focus', v);
+  $('focusBtn').classList.toggle('on', v);
+  $('focusBtn').textContent = v ? 'Focus uit' : 'Focus';
+  if (v) toast('Focusmodus - druk op Esc om te stoppen');
+}
+$('focusBtn').onclick = () => toggleFocus();
+
+/* ---------- Exporteren ---------- */
 function fileName() { return ($('title').value.trim() || 'document').replace(/[\\/:*?"<>|]/g, ''); }
 function download(name, content, type) {
   const a = document.createElement('a');
@@ -389,18 +901,38 @@ function download(name, content, type) {
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
-$('expHtml').onclick = () => {
-  const title = $('title').value || 'Document';
-  const html = '<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8"><title>' + esc(title) + '</title><style>body{font-family:Georgia,serif;max-width:720px;margin:40px auto;padding:0 20px;line-height:1.6}</style></head><body>' + $('editor').innerHTML + '</body></html>';
-  download(fileName() + '.html', html, 'text/html');
-};
+function exportHtml(word) {
+  const title = esc($('title').value || 'Document');
+  const head = word
+    ? '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="utf-8">'
+    : '<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">';
+  const css = '<style>body{font-family:Georgia,serif;max-width:720px;margin:40px auto;padding:0 20px;line-height:1.6;color:#111}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:6px 8px}blockquote{border-left:4px solid #3b6cff;padding-left:14px;color:#555}img{max-width:100%}</style>';
+  return head + '<title>' + title + '</title>' + css + '</head><body>' + $('editor').innerHTML + '</body></html>';
+}
+$('expHtml').onclick = () => download(fileName() + '.html', exportHtml(false), 'text/html');
+$('expDoc').onclick = () => download(fileName() + '.doc', '\ufeff' + exportHtml(true), 'application/msword');
 $('expTxt').onclick = () => download(fileName() + '.txt', $('editor').innerText, 'text/plain');
 $('expPdf').onclick = () => window.print();
 
+/* ---------- Sneltoetsen ---------- */
 document.addEventListener('keydown', e => {
-  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveNow(); }
+  const mod = e.ctrlKey || e.metaKey, k = e.key.toLowerCase();
+  const inApp = currentUser && !$('app').classList.contains('hidden');
+  if (!inApp) return;
+  const editing = !$('editorView').classList.contains('hidden');
+  if (mod && k === 's') { e.preventDefault(); saveNow(); }
+  else if (mod && e.shiftKey && k === 'f' && editing) { e.preventDefault(); toggleFocus(); }
+  else if (mod && k === 'f' && editing) { e.preventDefault(); openFind(); }
+  else if (mod && k === 'k' && document.activeElement === $('editor')) { e.preventDefault(); insertLink(); }
+  else if (mod && k === '/') { e.preventDefault(); openModal('helpModal'); }
+  else if (e.altKey && k === 'n') { e.preventDefault(); openModal('tplModal'); }
+  else if (k === 'escape') {
+    if (document.querySelector('.modal-bg:not(.hidden)')) closeModals();
+    else if (!$('findBar').classList.contains('hidden')) { closeFind(); $('editor').focus(); }
+    else if (document.body.classList.contains('focus')) toggleFocus(false);
+  }
 });
-window.addEventListener('beforeunload', e => { if (dirty) { saveNow(); e.preventDefault(); e.returnValue = ''; } });
+window.addEventListener('beforeunload', e => { if (dirty) { saveDraft(); saveNow(); e.preventDefault(); e.returnValue = ''; } });
 </script>
 </body>
 </html>
