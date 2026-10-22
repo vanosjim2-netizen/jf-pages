@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>jf.pages</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0f0f10;--panel:#18181b;--line:#2a2a2e;--hover:#222226;--text:#f4f4f5;--muted:#9a9aa3;--accent:#3b6cff}
+body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
+button,select{font:inherit;cursor:pointer}
+.hidden{display:none!important}
+.brand{display:flex;align-items:center;gap:10px;font-size:22px;font-weight:600}
+.logo{display:flex}
+.logo svg{width:36px;height:36px}
+.dot{color:var(--accent)}
+#auth{height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.auth-card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:32px;width:100%;max-width:380px}
+.sub{color:var(--muted);font-size:14px;margin-top:6px}
+.tabs{display:flex;gap:4px;background:var(--bg);padding:4px;border-radius:10px;margin:24px 0 16px}
+.tabs button{flex:1;padding:8px;border:0;border-radius:8px;background:transparent;color:var(--muted)}
+.tabs button.active{background:var(--panel);color:var(--text)}
+.field{display:block;margin-bottom:12px}
+.field span{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+.inp{width:100%;padding:10px 12px;background:var(--bg);border:1px solid var(--line);border-radius:8px;color:var(--text);font:inherit}
+.inp:focus{outline:2px solid var(--accent);outline-offset:-1px}
+.btn{padding:10px 14px;border:0;border-radius:8px;background:var(--accent);color:#fff;font-weight:500}
+.btn:disabled{opacity:.6;cursor:default}
+.full{width:100%}
+.link{background:none;border:0;color:var(--muted);font-size:13px;margin-top:12px;text-decoration:underline}
+.msg{font-size:13px;margin-top:12px;min-height:18px}
+.msg.err{color:#ff6b6b}.msg.ok{color:#4ade80}
+#app{display:grid;grid-template-rows:56px 1fr;height:100vh}
+header{display:flex;align-items:center;gap:12px;padding:0 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header .brand{font-size:18px}
+header .logo svg{width:28px;height:28px}
+.spacer{flex:1}
+#status,#userEmail{font-size:13px;color:var(--muted)}
+.icon-btn{background:transparent;border:1px solid var(--line);color:var(--text);border-radius:8px;padding:6px 10px;font-size:13px}
+.icon-btn:hover{background:var(--hover)}
+.icon-btn.danger:hover{border-color:#ff6b6b;color:#ff6b6b}
+#menuBtn{display:none}
+.main{display:grid;grid-template-columns:260px 1fr;min-height:0;position:relative}
+aside{border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0;padding:12px;gap:10px}
+#docList{list-style:none;overflow-y:auto;flex:1}
+#docList li{padding:10px;border-radius:8px;cursor:pointer;margin-bottom:2px}
+#docList li:hover{background:var(--hover)}
+#docList li.active{background:rgba(59,108,255,.18)}
+#docList .t{font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#docList .d{font-size:12px;color:var(--muted);margin-top:2px}
+.empty-list{color:var(--muted);font-size:13px;padding:10px}
+.editor-wrap{display:flex;flex-direction:column;min-height:0}
+#editorView{display:flex;flex-direction:column;min-height:0;flex:1}
+.doc-head{display:flex;align-items:center;gap:8px;padding:10px 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+#title{flex:1;min-width:160px;background:transparent;border:0;color:var(--text);font-size:20px;font-weight:600;padding:4px;border-radius:6px}
+#title:focus{outline:1px solid var(--line)}
+.toolbar{display:flex;flex-wrap:wrap;gap:3px;padding:8px 20px;border-bottom:1px solid var(--line);align-items:center}
+.toolbar button,.toolbar select{background:transparent;border:1px solid transparent;color:var(--text);border-radius:6px;padding:5px 9px;min-width:32px;font-size:14px}
+.toolbar button:hover{background:var(--hover);border-color:var(--line)}
+.toolbar button.on{background:rgba(59,108,255,.25);border-color:var(--accent)}
+.toolbar select{border-color:var(--line);background:var(--bg)}
+.toolbar input[type=color]{width:30px;height:28px;border:0;background:none;cursor:pointer}
+.sep{width:1px;height:20px;background:var(--line);margin:0 4px}
+.canvas{flex:1;overflow-y:auto;background:#0b0b0c;padding:32px 16px}
+#editor{background:#fff;color:#111;max-width:816px;min-height:1000px;margin:0 auto;padding:72px 80px;border-radius:4px;outline:none;line-height:1.6;font-size:16px;font-family:Georgia,"Times New Roman",serif}
+#editor:empty:before{content:"Begin met typen...";color:#999}
+#editor h1{font-size:2em;margin:.5em 0 .3em}#editor h2{font-size:1.5em;margin:.5em 0 .3em}#editor h3{font-size:1.2em;margin:.5em 0 .3em}
+#editor p{margin:0 0 .6em}#editor ul,#editor ol{padding-left:1.6em;margin:0 0 .6em}
+#editor a{color:var(--accent)}
+#editor blockquote{border-left:4px solid var(--accent);padding-left:14px;color:#444;margin:.6em 0}
+.doc-foot{padding:6px 20px;font-size:12px;color:var(--muted);border-top:1px solid var(--line)}
+.empty-state{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:var(--muted)}
+@media(max-width:800px){
+.main{grid-template-columns:1fr}
+aside{position:absolute;top:0;bottom:0;left:0;width:270px;z-index:5;transform:translateX(-100%);transition:transform .2s}
+aside.open{transform:none}
+#menuBtn{display:inline-block}#userEmail{display:none}
+#editor{padding:32px 22px;min-height:600px}
+}
+@media print{
+body{background:#fff;height:auto;overflow:visible}
+header,aside,.doc-head,.toolbar,.doc-foot{display:none!important}
+#app,.main,.editor-wrap,#editorView,.canvas{display:block;height:auto;overflow:visible;padding:0;background:#fff}
+#editor{padding:0;min-height:0;max-width:none}
+}
+</style>
+</head>
+<body>
+
+<div id="auth">
+  <div class="auth-card">
+    <div class="brand">
+      <span class="logo"><svg viewBox="60 50 200 200"><rect x="64" y="54" width="192" height="192" rx="42" fill="#111" stroke="#2a2a2e" stroke-width="6"/><path d="M105 86q0-6 6-6h74l30 30v109q0 6-6 6h-98q-6 0-6-6z" fill="#fff"/><path d="M185 80v24q0 6 6 6h24z" fill="#9db4ff"/><text x="120" y="150" font-size="46" font-weight="700" font-family="system-ui,sans-serif" fill="#111">jf<tspan fill="#3b6cff">.</tspan></text><rect x="120" y="170" width="80" height="7" rx="3.5" fill="#3b6cff"/><rect x="120" y="186" width="64" height="7" rx="3.5" fill="#c9d5ff"/><rect x="120" y="202" width="72" height="7" rx="3.5" fill="#c9d5ff"/></svg></span>
+      <span>jf<span class="dot">.</span>pages</span>
+    </div>
+    <p class="sub">Schrijven, simpel gemaakt.</p>
+    <div class="tabs">
+      <button type="button" data-mode="login" class="active">Inloggen</button>
+      <button type="button" data-mode="register">Registreren</button>
+    </div>
+    <form id="authForm">
+      <label class="field"><span>E-mail</span><input class="inp" type="email" id="email" required autocomplete="email"></label>
+      <label class="field"><span>Wachtwoord</span><input class="inp" type="password" id="password" required autocomplete="current-password"></label>
+      <button class="btn full" id="authSubmit" type="submit">Inloggen</button>
+    </form>
+    <button class="link" id="forgot" type="button">Wachtwoord vergeten?</button>
+    <div class="msg" id="authMsg"></div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <header>
+    <button class="icon-btn" id="menuBtn" aria-label="Menu">&#9776;</button>
+    <div class="brand"><span class="logo"></span><span>jf<span class="dot">.</span>pages</span></div>
+    <span id="status"></span>
+    <div class="spacer"></div>
+    <span id="userEmail"></span>
+    <button class="icon-btn" id="logout">Uitloggen</button>
+  </header>
+  <div class="main">
+    <aside id="sidebar">
+      <button class="btn full" id="newBtn">+ Nieuw document</button>
+      <input class="inp" id="search" placeholder="Zoeken...">
+      <ul id="docList"></ul>
+    </aside>
+    <section class="editor-wrap">
+      <div class="empty-state hidden" id="emptyState">
+        <p>Je hebt nog geen documenten.</p>
+        <button class="btn" id="emptyNew">+ Nieuw document</button>
+      </div>
+      <div id="editorView" class="hidden">
+        <div class="doc-head">
+          <input id="title" placeholder="Naamloos document" maxlength="120">
+          <button class="icon-btn" id="expHtml">HTML</button>
+          <button class="icon-btn" id="expTxt">TXT</button>
+          <button class="icon-btn" id="expPdf">PDF / printen</button>
+          <button class="icon-btn danger" id="deleteBtn">Verwijderen</button>
+        </div>
+        <div class="toolbar">
+          <button data-cmd="undo" title="Ongedaan maken (Ctrl+Z)">&#8630;</button>
+          <button data-cmd="redo" title="Opnieuw (Ctrl+Y)">&#8631;</button>
+          <span class="sep"></span>
+          <select id="blockSel" title="Stijl">
+            <option value="p">Normale tekst</option>
+            <option value="h1">Kop 1</option>
+            <option value="h2">Kop 2</option>
+            <option value="h3">Kop 3</option>
+            <option value="blockquote">Citaat</option>
+          </select>
+          <span class="sep"></span>
+          <button data-cmd="bold" title="Vet (Ctrl+B)"><b>B</b></button>
+          <button data-cmd="italic" title="Cursief (Ctrl+I)"><i>I</i></button>
+          <button data-cmd="underline" title="Onderstrepen (Ctrl+U)"><u>U</u></button>
+          <button data-cmd="strikeThrough" title="Doorhalen"><s>S</s></button>
+          <input type="color" id="colorPick" title="Tekstkleur" value="#111111">
+          <span class="sep"></span>
+          <button data-cmd="insertUnorderedList" title="Opsomming">&bull; Lijst</button>
+          <button data-cmd="insertOrderedList" title="Genummerde lijst">1. Lijst</button>
+          <span class="sep"></span>
+          <button data-cmd="justifyLeft" title="Links uitlijnen">&#8676;</button>
+          <button data-cmd="justifyCenter" title="Centreren">&#8596;</button>
+          <button data-cmd="justifyRight" title="Rechts uitlijnen">&#8677;</button>
+          <span class="sep"></span>
+          <button id="linkBtn" title="Link invoegen">Link</button>
+          <button data-cmd="removeFormat" title="Opmaak wissen">Opmaak wissen</button>
+        </div>
+        <div class="canvas"><div id="editor" contenteditable="true" spellcheck="true"></div></div>
+        <div class="doc-foot" id="count">0 woorden</div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://azzhruqhvmxqwsyatlju.supabase.co';
+const SUPABASE_KEY = 'PLAK_HIER_JE_ANON_KEY';
+
+const $ = id => document.getElementById(id);
+const keyMissing = SUPABASE_KEY.indexOf('PLAK_HIER') === 0;
+const sb = keyMissing ? null : supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+let docs = [], currentId = null, currentUser = null, saveTimer = null, dirty = false, mode = 'login', savedRange = null;
+
+document.querySelector('header .logo').innerHTML = document.querySelector('#auth .logo').innerHTML;
+document.execCommand('defaultParagraphSeparator', false, 'p');
+
+function setMsg(t, type) { const m = $('authMsg'); m.textContent = t; m.className = 'msg ' + (type || 'err'); }
+function setStatus(t) { $('status').textContent = t; }
+if (keyMissing) { setMsg('Nog geen Supabase-key ingesteld in index.html.'); $('authSubmit').disabled = true; }
+
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
+  mode = b.dataset.mode;
+  document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('active', x === b));
+  $('authSubmit').textContent = mode === 'login' ? 'Inloggen' : 'Account maken';
+  $('password').autocomplete = mode === 'login' ? 'current-password' : 'new-password';
+  setMsg('');
+});
+
+function vertaalFout(m) {
+  if (/invalid login/i.test(m)) return 'E-mail of wachtwoord klopt niet.';
+  if (/already registered/i.test(m)) return 'Dit e-mailadres heeft al een account.';
+  if (/not confirmed/i.test(m)) return 'Bevestig eerst je e-mail (check je inbox).';
+  if (/rate limit/i.test(m)) return 'Te veel pogingen, probeer het straks opnieuw.';
+  return m;
+}
+
+$('authForm').onsubmit = async e => {
+  e.preventDefault();
+  if (!sb) return;
+  const email = $('email').value.trim(), password = $('password').value;
+  if (password.length < 6) return setMsg('Wachtwoord moet minstens 6 tekens zijn.');
+  $('authSubmit').disabled = true;
+  const res = mode === 'login'
+    ? await sb.auth.signInWithPassword({ email, password })
+    : await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.origin + location.pathname } });
+  $('authSubmit').disabled = false;
+  if (res.error) return setMsg(vertaalFout(res.error.message));
+  if (mode === 'register' && !res.data.session) setMsg('Account gemaakt! Check je e-mail om te bevestigen.', 'ok');
+};
+
+$('forgot').onclick = async () => {
+  if (!sb) return;
+  const email = $('email').value.trim();
+  if (!email) return setMsg('Vul eerst je e-mail in.');
+  const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+  setMsg(error ? vertaalFout(error.message) : 'Reset-link verstuurd naar je e-mail.', error ? 'err' : 'ok');
+};
+
+$('logout').onclick = async () => { await saveNow(); await sb.auth.signOut(); };
+
+if (sb) sb.auth.onAuthStateChange((event, session) => {
+  setTimeout(() => {
+    if (event === 'PASSWORD_RECOVERY') {
+      const np = prompt('Kies een nieuw wachtwoord (minstens 6 tekens):');
+      if (np && np.length >= 6) sb.auth.updateUser({ password: np }).then(r => alert(r.error ? r.error.message : 'Wachtwoord aangepast!'));
+    }
+    render(session);
+  }, 0);
+});
+
+function render(session) {
+  const uid = session && session.user ? session.user.id : null;
+  if (uid === currentUser) return;
+  currentUser = uid;
+  $('auth').classList.toggle('hidden', !!uid);
+  $('app').classList.toggle('hidden', !uid);
+  if (uid) { $('userEmail').textContent = session.user.email; loadDocs(true); }
+  else { docs = []; currentId = null; dirty = false; $('password').value = ''; $('editorView').classList.add('hidden'); }
+}
+
+async function loadDocs(openFirst) {
+  setStatus('Laden...');
+  const { data, error } = await sb.from('documents').select('id,title,updated_at').order('updated_at', { ascending: false });
+  if (error) return setStatus('Fout bij laden: ' + error.message);
+  docs = data; renderList(); setStatus('');
+  if (openFirst) { if (docs.length) openDoc(docs[0].id); else showEmpty(); }
+}
+
+function formatDate(s) {
+  const d = new Date(s), now = new Date();
+  if (d.toDateString() === now.toDateString()) return 'Vandaag ' + d.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' });
+  return d.toLocaleDateString('nl-NL', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
+function renderList() {
+  const q = $('search').value.toLowerCase(), ul = $('docList');
+  ul.innerHTML = '';
+  const list = docs.filter(d => (d.title || '').toLowerCase().includes(q));
+  if (!list.length) { const div = document.createElement('div'); div.className = 'empty-list'; div.textContent = docs.length ? 'Niks gevonden.' : 'Nog geen documenten.'; ul.append(div); return; }
+  list.forEach(d => {
+    const li = document.createElement('li');
+    if (d.id === currentId) li.className = 'active';
+    const t = document.createElement('div'); t.className = 't'; t.textContent = d.title || 'Naamloos document';
+    const dt = document.createElement('div'); dt.className = 'd'; dt.textContent = formatDate(d.updated_at);
+    li.append(t, dt);
+    li.onclick = () => { openDoc(d.id); $('sidebar').classList.remove('open'); };
+    ul.append(li);
+  });
+}
+
+async function openDoc(id) {
+  await saveNow();
+  const { data, error } = await sb.from('documents').select('*').eq('id', id).single();
+  if (error) return setStatus('Kon document niet openen');
+  currentId = id;
+  $('title').value = data.title;
+  $('editor').innerHTML = data.content;
+  $('emptyState').classList.add('hidden');
+  $('editorView').classList.remove('hidden');
+  renderList(); updateCount(); setStatus('Opgeslagen');
+}
+
+function showEmpty() { currentId = null; $('editorView').classList.add('hidden'); $('emptyState').classList.remove('hidden'); renderList(); }
+
+async function newDoc() {
+  await saveNow();
+  const { data, error } = await sb.from('documents').insert({ title: 'Naamloos document', content: '' }).select('id,title,updated_at').single();
+  if (error) return alert('Kon geen document maken: ' + error.message);
+  docs.unshift(data);
+  await openDoc(data.id);
+  $('title').focus(); $('title').select();
+  $('sidebar').classList.remove('open');
+}
+$('newBtn').onclick = newDoc;
+$('emptyNew').onclick = newDoc;
+
+function markDirty() { dirty = true; setStatus('Niet opgeslagen...'); clearTimeout(saveTimer); saveTimer = setTimeout(saveNow, 1000); }
+
+async function saveNow() {
+  clearTimeout(saveTimer);
+  if (!dirty || !currentId) return;
+  dirty = false;
+  const id = currentId, title = $('title').value.trim() || 'Naamloos document', content = $('editor').innerHTML, updated_at = new Date().toISOString();
+  setStatus('Opslaan...');
+  const { error } = await sb.from('documents').update({ title, content, updated_at }).eq('id', id);
+  if (error) { dirty = true; return setStatus('Opslaan mislukt, probeer opnieuw'); }
+  const d = docs.find(x => x.id === id);
+  if (d) { d.title = title; d.updated_at = updated_at; docs.sort((a, b) => b.updated_at.localeCompare(a.updated_at)); renderList(); }
+  setStatus('Opgeslagen');
+}
+
+$('deleteBtn').onclick = async () => {
+  if (!currentId || !confirm('Dit document echt verwijderen?')) return;
+  const id = currentId; dirty = false; clearTimeout(saveTimer);
+  const { error } = await sb.from('documents').delete().eq('id', id);
+  if (error) return alert('Verwijderen mislukt: ' + error.message);
+  docs = docs.filter(d => d.id !== id); currentId = null;
+  if (docs.length) openDoc(docs[0].id); else showEmpty();
+};
+
+function updateCount() {
+  const text = $('editor').innerText.trim();
+  const words = text ? text.split(/\s+/).length : 0;
+  $('count').textContent = words + (words === 1 ? ' woord' : ' woorden') + ' \u00b7 ' + text.length + ' tekens';
+}
+
+$('editor').addEventListener('input', () => { markDirty(); updateCount(); });
+$('title').addEventListener('input', markDirty);
+$('search').addEventListener('input', renderList);
+$('menuBtn').onclick = () => $('sidebar').classList.toggle('open');
+
+function restoreSel() {
+  $('editor').focus();
+  if (savedRange) { const s = getSelection(); s.removeAllRanges(); s.addRange(savedRange); }
+}
+
+const stateCmds = ['bold', 'italic', 'underline', 'strikeThrough', 'insertUnorderedList', 'insertOrderedList', 'justifyLeft', 'justifyCenter', 'justifyRight'];
+document.addEventListener('selectionchange', () => {
+  const s = getSelection();
+  if (!s.rangeCount || !$('editor').contains(s.anchorNode)) return;
+  savedRange = s.getRangeAt(0).cloneRange();
+  let v = (document.queryCommandValue('formatBlock') || 'p').toLowerCase();
+  if (['p', 'h1', 'h2', 'h3', 'blockquote'].indexOf(v) < 0) v = 'p';
+  $('blockSel').value = v;
+  document.querySelectorAll('[data-cmd]').forEach(b => {
+    if (stateCmds.indexOf(b.dataset.cmd) >= 0) b.classList.toggle('on', document.queryCommandState(b.dataset.cmd));
+  });
+});
+
+document.querySelectorAll('[data-cmd]').forEach(b => {
+  b.onmousedown = e => e.preventDefault();
+  b.onclick = () => { restoreSel(); document.execCommand(b.dataset.cmd, false, null); markDirty(); updateCount(); };
+});
+$('blockSel').onchange = e => { restoreSel(); document.execCommand('formatBlock', false, '<' + e.target.value + '>'); markDirty(); };
+$('colorPick').oninput = e => { restoreSel(); document.execCommand('foreColor', false, e.target.value); markDirty(); };
+$('linkBtn').onmousedown = e => e.preventDefault();
+$('linkBtn').onclick = () => {
+  let url = prompt('Link (bijv. https://jimfun.com):');
+  if (!url) return;
+  if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+  restoreSel(); document.execCommand('createLink', false, url); markDirty();
+};
+
+$('editor').addEventListener('paste', e => {
+  e.preventDefault();
+  const t = (e.clipboardData || window.clipboardData).getData('text/plain');
+  document.execCommand('insertText', false, t);
+});
+$('editor').addEventListener('click', e => {
+  const a = e.target.closest('a');
+  if (a && (e.ctrlKey || e.metaKey)) window.open(a.href, '_blank', 'noopener');
+});
+
+function fileName() { return ($('title').value.trim() || 'document').replace(/[\\/:*?"<>|]/g, ''); }
+function download(name, content, type) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type }));
+  a.download = name; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+$('expHtml').onclick = () => {
+  const title = $('title').value || 'Document';
+  const html = '<!DOCTYPE html><html lang="nl"><head><meta charset="utf-8"><title>' + esc(title) + '</title><style>body{font-family:Georgia,serif;max-width:720px;margin:40px auto;padding:0 20px;line-height:1.6}</style></head><body>' + $('editor').innerHTML + '</body></html>';
+  download(fileName() + '.html', html, 'text/html');
+};
+$('expTxt').onclick = () => download(fileName() + '.txt', $('editor').innerText, 'text/plain');
+$('expPdf').onclick = () => window.print();
+
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') { e.preventDefault(); saveNow(); }
+});
+window.addEventListener('beforeunload', e => { if (dirty) { saveNow(); e.preventDefault(); e.returnValue = ''; } });
+</script>
+</body>
+</html>
