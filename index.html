@@ -109,6 +109,7 @@ aside{border-right:1px solid var(--line);background:var(--panel);display:flex;fl
 .paper p{margin:0 0 .6em}.paper ul,.paper ol{padding-left:1.6em;margin:0 0 .6em}
 .paper blockquote{border-left:4px solid var(--accent);padding-left:14px;color:var(--muted);margin:.6em 0}
 .paper table{border-collapse:collapse;margin:.6em 0;width:100%}
+.paper td>p,.paper th>p{margin:0}
 .paper td,.paper th{border:1px solid var(--line);padding:6px 8px;min-width:40px;vertical-align:top}
 .paper th{background:var(--hover);text-align:left}
 .paper img{max-width:100%;height:auto;border-radius:4px}
@@ -126,6 +127,8 @@ aside{border-right:1px solid var(--line);background:var(--panel);display:flex;fl
 .tpl-grid button{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px;text-align:left;color:var(--text)}
 .tpl-grid button:hover{border-color:var(--accent)}
 .tpl-grid b{display:block;margin-bottom:4px}
+.tpl-grid button.imp{grid-column:1/-1;border-style:dashed}
+.dropzone{position:fixed;inset:12px;border:3px dashed var(--accent);border-radius:18px;background:rgba(59,108,255,.08);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600;color:var(--accent);z-index:60;pointer-events:none}
 .tpl-grid span{font-size:12px;color:var(--muted)}
 .keys{width:100%;border-collapse:collapse;font-size:14px}
 .keys td{padding:6px 4px;border-bottom:1px solid var(--line)}
@@ -224,6 +227,8 @@ header,aside,.doc-head,.toolbar,.doc-foot,#findBar{display:none!important}
   <div class="main">
     <aside id="sidebar">
       <button class="btn full" id="newBtn">+ Nieuw document</button>
+      <button class="icon-btn" id="importBtn">&#8679; Word importeren</button>
+      <input type="file" id="importFile" accept=".docx,.txt,.md,.html,.htm" hidden>
       <div class="side-row">
         <input class="inp" id="search" placeholder="Zoeken...">
         <select class="inp" id="sortSel" title="Sorteren">
@@ -357,6 +362,7 @@ header,aside,.doc-head,.toolbar,.doc-foot,#findBar{display:none!important}
       <button data-tpl="brief"><b>Brief</b><span>Nette brief of e-mail</span></button>
       <button data-tpl="todo"><b>To-do lijst</b><span>Taken afvinken</span></button>
       <button data-tpl="plan"><b>Projectplan</b><span>Doel, planning, taken</span></button>
+      <button class="imp" id="tplImport"><b>&#8679; Word-bestand importeren</b><span>Open een .docx van je computer (of sleep het bestand hierheen)</span></button>
     </div>
     <div class="modal-foot"><button class="btn sec" data-close>Annuleren</button></div>
   </div>
@@ -556,7 +562,7 @@ function renderList() {
   const trashCount = docs.filter(d => d.deleted_at).length;
   $('trashBtn').textContent = inTrash ? '\u2190 Terug naar documenten' : '\uD83D\uDDD1 Prullenbak (' + trashCount + ')';
   $('emptyTrash').classList.toggle('hidden', !inTrash || !trashCount);
-  $('newBtn').classList.toggle('hidden', inTrash);
+  $('newBtn').classList.toggle('hidden', inTrash); $('importBtn').classList.toggle('hidden', inTrash);
   if (!list.length) {
     const div = document.createElement('div'); div.className = 'empty-list';
     div.textContent = inTrash ? 'De prullenbak is leeg.' : docs.some(d => !d.deleted_at) ? 'Niks gevonden.' : 'Nog geen documenten. Maak er een!';
@@ -910,6 +916,63 @@ function toggleFocus(on) {
   if (v) toast('Focusmodus - druk op Esc om te stoppen');
 }
 $('focusBtn').onclick = () => toggleFocus();
+
+/* ---------- Importeren (Word .docx, tekst, html) ---------- */
+const MAMMOTH_URL = 'https://cdn.jsdelivr.net/npm/mammoth@1.8.0/mammoth.browser.min.js';
+const loaded = {};
+function loadScript(src) { if (!loaded[src]) loaded[src] = new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => { delete loaded[src]; rej(new Error('laden mislukt')); }; document.head.append(s); }); return loaded[src]; }
+const IMPORT_EXT = ['docx', 'txt', 'md', 'html', 'htm'];
+function extOf(n) { return (String(n).split('.').pop() || '').toLowerCase(); }
+function shrinkImage(src) {
+  return new Promise(res => {
+    const im = new Image();
+    im.onload = () => { try { const m = 1400, r = Math.min(1, m / Math.max(im.width, im.height)); if (r === 1 && src.length < 300000) return res(src); const c = document.createElement('canvas'); c.width = Math.round(im.width * r); c.height = Math.round(im.height * r); c.getContext('2d').drawImage(im, 0, 0, c.width, c.height); res(/^data:image\/png/.test(src) ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', .85)); } catch (e) { res(src); } };
+    im.onerror = () => res(''); im.src = src;
+  });
+}
+async function importFile(file) {
+  const ext = extOf(file.name);
+  if (IMPORT_EXT.indexOf(ext) < 0) return alert('Dit bestandstype kan niet worden geïmporteerd. Kies een Word-bestand (.docx), .txt of .html.\n\nHeb je een oud .doc-bestand? Sla het in Word eerst op als .docx.');
+  closeModals(); setStatus('Importeren...'); let html = '', warn = 0;
+  try {
+    if (ext === 'docx') {
+      try { await loadScript(MAMMOTH_URL); } catch (e) { setStatus(''); return alert('Kon de Word-module niet laden. Ben je online?'); }
+      const r = await mammoth.convertToHtml({ arrayBuffer: await file.arrayBuffer() }, {
+        styleMap: ['u => u', 'strike => s', "p[style-name='Title'] => h1:fresh", "p[style-name='Titel'] => h1:fresh", "p[style-name='Subtitle'] => h2:fresh", "p[style-name='Ondertitel'] => h2:fresh", "p[style-name='Quote'] => blockquote:fresh", "p[style-name='Citaat'] => blockquote:fresh"],
+        convertImage: mammoth.images.imgElement(async img => { if (!/^image\/(png|jpe?g|gif|webp|bmp)$/.test(img.contentType)) { warn++; return { src: '' }; } const b = await img.read('base64'); return { src: await shrinkImage('data:' + img.contentType + ';base64,' + b) }; })
+      });
+      html = r.value;
+    } else if (ext === 'txt' || ext === 'md') {
+      html = (await file.text()).split(/\r?\n/).map(l => '<p>' + (esc(l) || '<br>') + '</p>').join('');
+    } else {
+      const d = new DOMParser().parseFromString(await file.text(), 'text/html'); html = d.body ? d.body.innerHTML : '';
+    }
+  } catch (e) { setStatus(''); return alert('Dit bestand kon niet worden gelezen. Is het misschien beschadigd of beveiligd met een wachtwoord?'); }
+  const box = document.createElement('div'); box.innerHTML = clean(html);
+  box.querySelectorAll('img').forEach(i => { if (!i.getAttribute('src')) i.remove(); });
+  box.querySelectorAll('p').forEach(p => { if (!p.innerHTML.trim()) p.innerHTML = '<br>'; });
+  html = box.innerHTML.trim() || '<p><br></p>';
+  await saveNow();
+  const title = file.name.replace(/\.[^.]+$/, '').slice(0, 120) || 'Geïmporteerd document';
+  const { data, error } = await sb.from('documents').insert({ title, content: html }).select(FIELDS).single();
+  if (error) { setStatus(''); return alert('Kon het document niet opslaan: ' + error.message); }
+  docs.unshift(data); view = 'docs'; await openDoc(data.id); $('sidebar').classList.remove('open');
+  toast(warn ? 'Geïmporteerd (' + warn + ' afbeelding' + (warn === 1 ? '' : 'en') + ' in een onbekend formaat overgeslagen)' : 'Word-bestand geïmporteerd!');
+}
+$('importBtn').onclick = () => $('importFile').click();
+$('tplImport').onclick = () => $('importFile').click();
+$('importFile').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) importFile(f); };
+let dragN = 0;
+const dropOk = e => currentUser && e.dataTransfer && [...e.dataTransfer.types].indexOf('Files') >= 0 && !$('app').classList.contains('hidden');
+document.addEventListener('dragenter', e => { if (!dropOk(e) || $('editor').contains(e.target)) return; dragN++; if (!$('dropzone')) { const d = document.createElement('div'); d.id = 'dropzone'; d.className = 'dropzone'; d.textContent = 'Laat los om te importeren'; document.body.append(d); } });
+document.addEventListener('dragleave', e => { if (!dropOk(e)) return; dragN = Math.max(0, dragN - 1); if (!dragN && $('dropzone')) $('dropzone').remove(); });
+document.addEventListener('dragover', e => { if (dropOk(e) && !$('editor').contains(e.target)) e.preventDefault(); });
+document.addEventListener('drop', e => {
+  dragN = 0; if ($('dropzone')) $('dropzone').remove();
+  if (!dropOk(e)) return; const f = e.dataTransfer.files[0]; if (!f) return;
+  if (IMPORT_EXT.indexOf(extOf(f.name)) >= 0) { e.preventDefault(); importFile(f); }
+  else if (!$('editor').contains(e.target)) e.preventDefault();
+});
 
 /* ---------- Exporteren ---------- */
 function fileName() { return ($('title').value.trim() || 'document').replace(/[\\/:*?"<>|]/g, ''); }
