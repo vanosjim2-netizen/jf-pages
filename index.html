@@ -62,6 +62,10 @@ header .logo svg{width:28px;height:28px}
 .menu-pop{position:absolute;right:0;top:calc(100% + 6px);background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:6px;min-width:210px;z-index:30;box-shadow:0 8px 24px rgba(0,0,0,.18)}
 .menu-pop button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--text);padding:8px 10px;border-radius:6px;font-size:14px}
 .menu-pop button:hover{background:var(--hover)}
+.menu-pop.left{right:auto;left:0}
+.menu-pop a{display:block;width:100%;text-align:left;color:var(--text);padding:8px 10px;border-radius:6px;font-size:14px;text-decoration:none}
+.menu-pop a:hover{background:var(--hover)}
+.menu-pop hr{border:0;border-top:1px solid var(--line);margin:4px 0}
 .menu-pop .info{padding:8px 10px;font-size:12px;color:var(--muted);border-bottom:1px solid var(--line);margin-bottom:4px;word-break:break-all}
 .main{display:grid;grid-template-columns:270px 1fr;min-height:0;position:relative}
 aside{border-right:1px solid var(--line);background:var(--panel);display:flex;flex-direction:column;min-height:0;padding:12px;gap:8px}
@@ -188,6 +192,21 @@ header,aside,.doc-head,.toolbar,.doc-foot,#findBar{display:none!important}
   <header>
     <button class="icon-btn" id="menuBtn" aria-label="Menu">&#9776;</button>
     <div class="brand"><span class="logo"></span><span>jf<span class="dot">.</span>pages</span></div>
+    <details class="menu">
+      <summary class="icon-btn">Apps &#9662;</summary>
+      <div class="menu-pop left">
+        <a href="../jf-office/">&#127968; jf.office &mdash; startscherm</a>
+        <hr>
+        <a href="../jf-pages/">&#128196; jf.pages &mdash; documenten</a>
+        <a href="../jf-cells/">&#128202; jf.cells &mdash; spreadsheets</a>
+        <a href="../jf-presentations/">&#127908; jf.presentations &mdash; presentaties</a>
+        <a href="../jf-notes/">&#128211; jf.notes &mdash; notities</a>
+        <a href="../jf-planner/">&#128197; jf.planner &mdash; agenda en huiswerk</a>
+        <a href="../jf-forms/">&#128221; jf.forms &mdash; formulieren</a>
+        <a href="../jf-draw/">&#127912; jf.draw &mdash; whiteboard</a>
+        <a href="../jf-drive/">&#128193; jf.drive &mdash; bestanden</a>
+      </div>
+    </details>
     <span id="status"></span>
     <span id="offline" class="badge off hidden">Offline</span>
     <div class="spacer"></div>
